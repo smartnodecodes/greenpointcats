@@ -6,7 +6,10 @@ module.exports = {
     '@remix-run/eslint-config',
     'plugin:hydrogen/recommended',
     'plugin:hydrogen/typescript',
+    'prettier',
+    'plugin:prettier/recommended',
   ],
+  plugins: ['prettier'],
   rules: {
     '@typescript-eslint/ban-ts-comment': 'off',
     '@typescript-eslint/naming-convention': 'off',
@@ -14,5 +17,6 @@ module.exports = {
     'no-useless-escape': 'off',
     '@typescript-eslint/no-non-null-asserted-optional-chain': 'off',
     'no-case-declarations': 'off',
+    'prettier/prettier': 'error',
   },
 };

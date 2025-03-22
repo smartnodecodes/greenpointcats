@@ -1,16 +1,46 @@
-import { CatSort } from '~/components/match/CatSort';
-import { V2_MetaFunction } from '@shopify/remix-oxygen';
+import {CatSort} from '~/components/match/CatSort';
+import {V2_MetaFunction} from '@shopify/remix-oxygen';
+import confetti from 'canvas-confetti';
 
 export const meta: V2_MetaFunction = () => {
-    return [{ title: `Hydrogen | Match` }];
+  return [{title: `Hydrogen | Match`}];
+};
+
+const handleComplete = () => {
+  const end = Date.now() + 3 * 1000; // 3 seconds
+  const colors = ['#a786ff', '#fd8bbc', '#eca184', '#f8deb1'];
+
+  const frame = () => {
+    if (Date.now() > end) return;
+
+    confetti({
+      particleCount: 2,
+      angle: 60,
+      spread: 55,
+      startVelocity: 60,
+      origin: {x: 0, y: 0.5},
+      colors: colors,
+    });
+    confetti({
+      particleCount: 2,
+      angle: 120,
+      spread: 55,
+      startVelocity: 60,
+      origin: {x: 1, y: 0.5},
+      colors: colors,
+    });
+
+    requestAnimationFrame(frame);
+  };
+
+  frame();
 };
 
 export default function MatchPage() {
-    return (
-        <div className="search">
-            <h1>Search</h1>
-            <CatSort />
-        </div>
-    );
+  return (
+    <div className="search">
+      <h1>Match</h1>
+      <CatSort onComplete={handleComplete} />
+    </div>
+  );
 }
-

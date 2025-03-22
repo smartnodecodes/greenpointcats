@@ -1,19 +1,26 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef, CSSProperties } from "react";
+import {useState, useEffect, useRef, CSSProperties} from 'react';
 
-import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
+import {Button} from '~/components/ui/button';
+import {Badge} from '~/components/ui/badge';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "~/components/ui/tooltip";
+} from '~/components/ui/tooltip';
 
-import { cn } from "~/lib/utils";
+import {cn} from '~/lib/utils';
 
-import { Loader2, Sparkles, MoveHorizontal, Undo, RotateCcw, Info } from "lucide-react";
+import {
+  Loader2,
+  Sparkles,
+  MoveHorizontal,
+  Undo,
+  RotateCcw,
+  Info,
+} from 'lucide-react';
 
 // Cat type definition
 type Cat = {
@@ -54,7 +61,7 @@ const DIFFICULTY_CONFIG = {
     stacks: 10, // 8 cats + 2 empty
     emptyStacks: 2,
     breakupProbability: 0.5, // Medium chance of breaking up same-cat groups
-  }
+  },
 };
 
 type CatBox = {
@@ -72,14 +79,24 @@ interface CatSortProps {
   initialDifficulty?: Difficulty;
 }
 
-export function CatSort({ onComplete, className, initialDifficulty = 'medium' }: CatSortProps) {
+export function CatSort({
+  onComplete,
+  className,
+  initialDifficulty = 'medium',
+}: CatSortProps) {
   const [stacks, setStacks] = useState<Stack[]>([]);
-  const [selectedStackIndex, setSelectedStackIndex] = useState<number | null>(null);
+  const [selectedStackIndex, setSelectedStackIndex] = useState<number | null>(
+    null,
+  );
   const [moveCount, setMoveCount] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const [isLost, setIsLost] = useState(false);
-  const [moves, setMoves] = useState<{ from: number, to: number, count: number }[]>([]);
-  const [animatingBoxes, setAnimatingBoxes] = useState<{ id: string, fromStack: number, toStack: number }[]>([]);
+  const [moves, setMoves] = useState<
+    {from: number; to: number; count: number}[]
+  >([]);
+  const [animatingBoxes, setAnimatingBoxes] = useState<
+    {id: string; fromStack: number; toStack: number}[]
+  >([]);
   const [isAnimating, setIsAnimating] = useState(false);
   const [difficulty, setDifficulty] = useState<Difficulty>(initialDifficulty);
   const [activeCats, setActiveCats] = useState<Cat[]>([]);
@@ -88,33 +105,72 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
   // Reference to stack elements for position calculation
   const stackRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  const images = [
+    'https://img.freepik.com/free-vector/cute-cat-stretching-cartoon-vector-icon-illustration-animal-nature-icon-isolated-flat-vector_138676-13782.jpg',
+    'https://img.freepik.com/free-vector/cute-cat-with-love-sign-hand-cartoon-illustration-animal-nature-concept-isolated-flat-cartoon-style_138676-3419.jpg',
+    'https://img.freepik.com/premium-vector/vector-illustration-cute-cat-kids-story-book_925324-13973.jpg',
+    'https://img.freepik.com/premium-vector/cute-cat-sitting-cartoon-vector-illustration_9845-584.jpg',
+    'https://img.freepik.com/free-vector/cute-cat-hole-cartoon-vector-icon-illustration-animal-nature-icon-concept-isolated-premium-vector-flat-cartoon-style_138676-4236.jpg',
+    'https://img.freepik.com/premium-vector/cute-kawaii-smiling-cat-animal-pet-logo-vector-icon-illustration-flat-style_126068-94.jpg',
+    'https://img.freepik.com/free-vector/cute-cat-sitting-cartoon-vector-icon-illustration-animal-nature-icon-concept-isolated-premium-flat_138676-4556.jpg',
+    'https://img.freepik.com/free-vector/cute-cat-playing-pow-cartoon-vector-icon-illustration-animal-nature-icon-concept-isolated-premium-vector-flat-cartoon-style_138676-4074.jpg',
+  ];
   // Create placeholder cats to use
-  const placeholderCats: Cat[] = Array(8).fill(null).map((_, i) => ({
-    id: `cat-${i}`,
-    name: [`Whiskers`, `Mittens`, `Fluffy`, `Shadow`, `Luna`, `Oliver`, `Leo`, `Bella`][i],
-    image: `https://placecats.com/64/${64 + i}`, // Slight variation in each cat image
-    primaryColor: ["#f39c12", "#3498db", "#2ecc71", "#9b59b6", "#e74c3c", "#1abc9c", "#f1c40f", "#34495e"][i],
-    secondaryColor: ["#e67e22", "#2980b9", "#27ae60", "#8e44ad", "#c0392b", "#16a085", "#f39c12", "#2c3e50"][i],
-  }));
+  const placeholderCats: Cat[] = Array(8)
+    .fill(null)
+    .map((_, i) => ({
+      id: `cat-${i}`,
+      name: [
+        `Whiskers`,
+        `Mittens`,
+        `Fluffy`,
+        `Shadow`,
+        `Luna`,
+        `Oliver`,
+        `Leo`,
+        `Bella`,
+      ][i],
+      image: images[i], // Slight variation in each cat image
+      primaryColor: [
+        '#f39c12',
+        '#3498db',
+        '#2ecc71',
+        '#9b59b6',
+        '#e74c3c',
+        '#1abc9c',
+        '#f1c40f',
+        '#34495e',
+      ][i],
+      secondaryColor: [
+        '#e67e22',
+        '#2980b9',
+        '#27ae60',
+        '#8e44ad',
+        '#c0392b',
+        '#16a085',
+        '#f39c12',
+        '#2c3e50',
+      ][i],
+    }));
 
   // Update configuration when difficulty changes or cats are loaded
   useEffect(() => {
     if (loading) return;
-    
+
     const config = DIFFICULTY_CONFIG[difficulty];
-    
+
     // Use placeholder cats directly instead of trying to map over empty array
     const availableCats = placeholderCats;
-    
+
     // Shuffle and randomly select cats for this game
     const shuffledCats = shuffleArray(availableCats);
     const gameCats = shuffledCats.slice(0, config.cats);
-    
+
     setActiveCats(gameCats);
-    
+
     // Initialize game with new settings
     initializeGame(gameCats, config);
-    
+
     // Initialize stack refs array
     stackRefs.current = Array(config.stacks).fill(null);
   }, [difficulty, loading]);
@@ -130,16 +186,19 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
   };
 
   // Initialize the game with a solvable but challenging configuration
-  const initializeGame = (availableCats: Cat[] = activeCats, config = DIFFICULTY_CONFIG[difficulty]) => {
+  const initializeGame = (
+    availableCats: Cat[] = activeCats,
+    config = DIFFICULTY_CONFIG[difficulty],
+  ) => {
     if (!availableCats.length) return;
 
     // Create boxes (4 of each cat)
     const allBoxes: CatBox[] = [];
-    availableCats.forEach(cat => {
+    availableCats.forEach((cat) => {
       for (let i = 0; i < MAX_STACK_SIZE; i++) {
         allBoxes.push({
           id: `${cat.id}-${i}`,
-          cat: cat
+          cat: cat,
         });
       }
     });
@@ -155,10 +214,14 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
 
     // Ensure even distribution - no stack should have more than MAX_STACK_SIZE boxes
     // This is crucial for solvability
-    const boxesPerStack = Math.min(MAX_STACK_SIZE, Math.ceil(allBoxes.length / filledStacks));
+    const boxesPerStack = Math.min(
+      MAX_STACK_SIZE,
+      Math.ceil(allBoxes.length / filledStacks),
+    );
 
     // For easier gameplay, we'll create some pre-matched patterns based on difficulty
-    const preMatchedPairs = difficulty === 'easy' ? 4 : (difficulty === 'medium' ? 3 : 2);
+    const preMatchedPairs =
+      difficulty === 'easy' ? 4 : difficulty === 'medium' ? 3 : 2;
 
     // Group some boxes of the same cat for easier starting patterns
     const organizedBoxes: CatBox[] = [];
@@ -171,7 +234,7 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
       const catId = remainingBoxes[boxIndex].cat.id;
 
       // Find all boxes of this cat
-      const samecatBoxes = remainingBoxes.filter(box => box.cat.id === catId);
+      const samecatBoxes = remainingBoxes.filter((box) => box.cat.id === catId);
 
       // Take 2-3 of them if available
       const pairSize = Math.min(3, samecatBoxes.length);
@@ -181,8 +244,8 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
       organizedBoxes.push(...selectedBoxes);
 
       // Remove from remaining boxes
-      selectedBoxes.forEach(box => {
-        const idx = remainingBoxes.findIndex(b => b.id === box.id);
+      selectedBoxes.forEach((box) => {
+        const idx = remainingBoxes.findIndex((b) => b.id === box.id);
         if (idx !== -1) remainingBoxes.splice(idx, 1);
       });
     }
@@ -227,7 +290,8 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
       // Group same-cat boxes together within stacks
       for (let i = 0; i < filledStacks; i++) {
         // Sort each stack based on cat to group them
-        if (Math.random() < 0.7) { // 70% chance to create cat groupings
+        if (Math.random() < 0.7) {
+          // 70% chance to create cat groupings
           newStacks[i].sort((a, b) => a.cat.id.localeCompare(b.cat.id));
         }
       }
@@ -241,12 +305,18 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
 
         // Check if we accidentally created a full stack of the same cat
         if (newStacks[i].length > 0) {
-          const allSamecat = newStacks[i].every(box => box.cat.id === newStacks[i][0].cat.id);
+          const allSamecat = newStacks[i].every(
+            (box) => box.cat.id === newStacks[i][0].cat.id,
+          );
 
           // If so, swap a random box with another stack
           if (allSamecat && newStacks[i].length === MAX_STACK_SIZE) {
-            const randomStackIndex = (i + 1 + Math.floor(Math.random() * (filledStacks - 1))) % filledStacks;
-            const randomBoxIndex = Math.floor(Math.random() * newStacks[randomStackIndex].length);
+            const randomStackIndex =
+              (i + 1 + Math.floor(Math.random() * (filledStacks - 1))) %
+              filledStacks;
+            const randomBoxIndex = Math.floor(
+              Math.random() * newStacks[randomStackIndex].length,
+            );
 
             // Swap boxes
             const temp = newStacks[i][0];
@@ -261,13 +331,18 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
     for (let i = 0; i < filledStacks; i++) {
       for (let j = 1; j < newStacks[i].length; j++) {
         // If we find consecutive same-cat boxes, maybe break them up
-        if (newStacks[i][j].cat.id === newStacks[i][j - 1].cat.id &&
-          Math.random() < config.breakupProbability) {
-
+        if (
+          newStacks[i][j].cat.id === newStacks[i][j - 1].cat.id &&
+          Math.random() < config.breakupProbability
+        ) {
           // Find a different stack to swap with
-          const randomStackIndex = (i + 1 + Math.floor(Math.random() * (filledStacks - 1))) % filledStacks;
+          const randomStackIndex =
+            (i + 1 + Math.floor(Math.random() * (filledStacks - 1))) %
+            filledStacks;
           if (newStacks[randomStackIndex].length > 0) {
-            const randomBoxIndex = Math.floor(Math.random() * newStacks[randomStackIndex].length);
+            const randomBoxIndex = Math.floor(
+              Math.random() * newStacks[randomStackIndex].length,
+            );
 
             // Swap boxes
             const temp = newStacks[i][j];
@@ -287,12 +362,12 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
     let oversizedStacks = false;
 
     // Check stack sizes and count cats
-    newStacks.forEach(stack => {
+    newStacks.forEach((stack) => {
       if (stack.length > MAX_STACK_SIZE) {
         oversizedStacks = true;
       }
 
-      stack.forEach(box => {
+      stack.forEach((box) => {
         if (!catCounts[box.cat.id]) {
           catCounts[box.cat.id] = 0;
         }
@@ -301,11 +376,13 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
     });
 
     // Check if any cat has more than MAX_STACK_SIZE boxes
-    const tooManyBoxesOfOnecat = Object.values(catCounts).some(count => count > MAX_STACK_SIZE);
+    const tooManyBoxesOfOnecat = Object.values(catCounts).some(
+      (count) => count > MAX_STACK_SIZE,
+    );
 
     // If either check fails, regenerate the puzzle
     if (oversizedStacks || tooManyBoxesOfOnecat) {
-      console.log("Generated an invalid puzzle. Regenerating...");
+      console.log('Generated an invalid puzzle. Regenerating...');
       return initializeGame(availableCats, config); // Recursively try again
     }
 
@@ -341,12 +418,12 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
   // Check if the game is complete (each stack has only one cat or is empty)
   const checkCompletion = (currentStacks: Stack[]) => {
     // First check: each non-empty stack must have only one cat
-    const eachStackValid = currentStacks.every(stack => {
+    const eachStackValid = currentStacks.every((stack) => {
       if (stack.length === 0) return true; // Empty stacks are fine
 
       // Check if all boxes in this stack are the same cat
       const firstcatId = stack[0].cat.id;
-      return stack.every(box => box.cat.id === firstcatId);
+      return stack.every((box) => box.cat.id === firstcatId);
     });
 
     // If basic check fails, no need to continue
@@ -359,12 +436,12 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
     const catMap: Record<string, number> = {};
 
     // Count boxes of each cat in play
-    activeCats.forEach(cat => {
+    activeCats.forEach((cat) => {
       catMap[cat.id] = 0;
     });
 
     // Count how many boxes of each cat exist in the stacks
-    currentStacks.forEach(stack => {
+    currentStacks.forEach((stack) => {
       if (stack.length > 0) {
         const stackcatId = stack[0].cat.id;
         // Only count if it's a valid cat in our game
@@ -382,7 +459,9 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
     });
 
     // Check if each cat has exactly MAX_STACK_SIZE boxes in a single stack
-    const allcatsComplete = Object.values(catMap).every(count => count === MAX_STACK_SIZE);
+    const allcatsComplete = Object.values(catMap).every(
+      (count) => count === MAX_STACK_SIZE,
+    );
 
     // The puzzle is complete only if both conditions are met
     const complete = eachStackValid && allcatsComplete;
@@ -398,12 +477,16 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
   // Check if there are any valid moves available
   const checkForValidMoves = (currentStacks: Stack[]) => {
     // If any stack is empty, moves are possible
-    if (currentStacks.some(stack => stack.length === 0)) {
+    if (currentStacks.some((stack) => stack.length === 0)) {
       return true;
     }
 
     // Check each source stack
-    for (let fromStackIndex = 0; fromStackIndex < currentStacks.length; fromStackIndex++) {
+    for (
+      let fromStackIndex = 0;
+      fromStackIndex < currentStacks.length;
+      fromStackIndex++
+    ) {
       const sourceStack = currentStacks[fromStackIndex];
       if (sourceStack.length === 0) continue;
 
@@ -411,7 +494,11 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
       const matchingBoxes = getMatchingTopBoxes(sourceStack);
 
       // Check each potential destination stack
-      for (let toStackIndex = 0; toStackIndex < currentStacks.length; toStackIndex++) {
+      for (
+        let toStackIndex = 0;
+        toStackIndex < currentStacks.length;
+        toStackIndex++
+      ) {
         if (fromStackIndex === toStackIndex) continue;
 
         const destStack = currentStacks[toStackIndex];
@@ -436,14 +523,18 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
   };
 
   // Animate boxes moving between stacks
-  const animateBoxMovement = (boxIds: string[], fromStackIndex: number, toStackIndex: number) => {
+  const animateBoxMovement = (
+    boxIds: string[],
+    fromStackIndex: number,
+    toStackIndex: number,
+  ) => {
     setIsAnimating(true);
 
     // Mark which boxes are animating
-    const animBoxes = boxIds.map(id => ({
+    const animBoxes = boxIds.map((id) => ({
       id,
       fromStack: fromStackIndex,
-      toStack: toStackIndex
+      toStack: toStackIndex,
     }));
 
     setAnimatingBoxes(animBoxes);
@@ -514,24 +605,30 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
         if (destinationStack.length > 0) {
           const destTopBox = destinationStack[0]; // Top box is now at index 0
           // Can only place matching cats on top of matching cats
-          if (destTopBox.cat.id !== matchingBoxes[0].cat.id && destinationStack.length > 0) {
+          if (
+            destTopBox.cat.id !== matchingBoxes[0].cat.id &&
+            destinationStack.length > 0
+          ) {
             setSelectedStackIndex(null);
             return;
           }
         }
 
         // Increment move count
-        setMoveCount(prev => prev + 1);
+        setMoveCount((prev) => prev + 1);
 
         // Record the move
-        setMoves([...moves, {
-          from: fromStackIndex,
-          to: stackIndex,
-          count: matchingBoxes.length
-        }]);
+        setMoves([
+          ...moves,
+          {
+            from: fromStackIndex,
+            to: stackIndex,
+            count: matchingBoxes.length,
+          },
+        ]);
 
         // Get the box IDs for animation
-        const boxIds = matchingBoxes.map(box => box.id);
+        const boxIds = matchingBoxes.map((box) => box.id);
 
         // Start animation
         animateBoxMovement(boxIds, fromStackIndex, stackIndex);
@@ -553,13 +650,13 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
 
     // Get the boxes that need to move back
     const boxesToMoveBack = stacks[lastMove.to].slice(0, lastMove.count);
-    const boxIds = boxesToMoveBack.map(box => box.id);
+    const boxIds = boxesToMoveBack.map((box) => box.id);
 
     // Animation will handle the actual stack update
     animateBoxMovement(boxIds, lastMove.to, lastMove.from);
 
     // Update move count and history
-    setMoveCount(prev => prev - 1);
+    setMoveCount((prev) => prev - 1);
     setMoves(moves.slice(0, -1));
     setIsComplete(false);
     setIsLost(false); // Undo should clear the lost state
@@ -567,7 +664,7 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
 
   // Calculate position for animating boxes
   const getAnimatingBoxStyle = (boxId: string): CSSProperties => {
-    const animBox = animatingBoxes.find(box => box.id === boxId);
+    const animBox = animatingBoxes.find((box) => box.id === boxId);
     if (!animBox) return {};
 
     const fromStackEl = stackRefs.current[animBox.fromStack];
@@ -597,15 +694,15 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
   // Get a background color for a cat box
   const getCatBoxStyle = (cat: Cat): CSSProperties => {
     return {
-      backgroundColor: cat.primaryColor || "#f0f0f0",
-      borderColor: cat.secondaryColor || "#d0d0d0",
+      backgroundColor: cat.primaryColor || '#f0f0f0',
+      borderColor: cat.secondaryColor || '#d0d0d0',
     };
   };
 
   // Reset button handler
   const handleReset = () => {
     if (isAnimating) return;
-    
+
     const config = DIFFICULTY_CONFIG[difficulty];
     // Use placeholder cats
     const shuffledCats = shuffleArray(placeholderCats);
@@ -615,38 +712,49 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-64">
-      <Loader2 className="h-10 w-10 animate-spin" />
-    </div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-10 w-10 animate-spin" />
+      </div>
+    );
   }
 
   return (
-    <div className={cn("flex flex-col items-center gap-2 p-4", className)}>
+    <div className={cn('flex flex-col items-center gap-2 p-4', className)}>
+      <div className="flex items-center justify-center gap-2 mb-2">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-yellow-500" />
+          <h2 className="text-2xl font-semibold mb-0">Cat Sort</h2>
+          <Sparkles className="h-5 w-5 text-yellow-500" />
+        </div>
+      </div>
 
-      <h3 className="text-lg font-semibold mb-6">While you&apos;re here, try solving this puzzle!</h3>
+      <h3 className="text-lg font-semibold mb-6">
+        Help the cats find their way home!
+      </h3>
       <p className="text-sm text-muted-foreground mb-8">
-        These cats are all mixed up! Help sort them into their proper groups!
-      </p>
-
-
-      <div className="flex items-center gap-2 mb-2">
-        <Sparkles className="h-5 w-5 text-yellow-500" />
-        <h3 className="text-xl font-semibold">Cat Sort</h3>
-        <Sparkles className="h-5 w-5 text-yellow-500" />
-
+        These cats are all mixed up! Help sort them into their proper groups!{' '}
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 rounded-full"
+              >
                 <Info className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent className="max-w-sm">
-              <p>Sort cats into separate stacks. Cats of the same kind move as a group. Click a stack to select it, then click another stack to move them.</p>
+              <p>
+                Sort cats into separate stacks. Cats of the same kind move as a
+                group. Click a stack to select it, then click another stack to
+                move them.
+              </p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      </div>
+      </p>
 
       <div className="flex gap-2 mb-4">
         <div className="text-sm text-gray-500 mr-1">Difficulty:</div>
@@ -682,42 +790,48 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
       <div className="flex flex-wrap justify-center gap-3 max-w-3xl">
         {stacks.map((stack, stackIndex) => {
           // Calculate matching boxes at the top
-          const matchingBoxes = selectedStackIndex === stackIndex
-            ? getMatchingTopBoxes(stack)
-            : [];
+          const matchingBoxes =
+            selectedStackIndex === stackIndex ? getMatchingTopBoxes(stack) : [];
 
           return (
             <div
               key={`stack-${stackIndex}`}
-              ref={(el) => { stackRefs.current[stackIndex] = el; }}
+              ref={(el) => {
+                stackRefs.current[stackIndex] = el;
+              }}
               className={cn(
-                "relative w-14 h-64 border-2 border-gray-300 rounded-lg flex flex-col items-center justify-end p-1 transition-all cursor-pointer",
-                selectedStackIndex === stackIndex && "border-indigo-500 border-dashed ring-2 ring-indigo-300",
-                isLost && "border-red-300",
-                isComplete && "border-green-300",
-                stack.length === 0 && "bg-gray-50"
+                'relative w-14 h-64 border-2 border-gray-300 rounded-lg flex flex-col items-center justify-end p-1 transition-all cursor-pointer',
+                selectedStackIndex === stackIndex &&
+                  'border-indigo-500 border-dashed ring-2 ring-indigo-300',
+                isLost && 'border-red-300',
+                isComplete && 'border-green-300',
+                stack.length === 0 && 'bg-gray-50',
               )}
               onClick={() => handleStackClick(stackIndex)}
             >
               {/* Boxes are now stacked from top to bottom */}
               {stack.map((box, boxIndex) => {
-                const isPartOfMatchingGroup = selectedStackIndex === stackIndex &&
-                  matchingBoxes.some(matchBox => matchBox.id === box.id);
+                const isPartOfMatchingGroup =
+                  selectedStackIndex === stackIndex &&
+                  matchingBoxes.some((matchBox) => matchBox.id === box.id);
 
-                const isAnimating = animatingBoxes.some(animBox => animBox.id === box.id);
+                const isAnimating = animatingBoxes.some(
+                  (animBox) => animBox.id === box.id,
+                );
 
                 return (
                   <div
                     key={box.id}
                     className={cn(
-                      "w-12 h-12 rounded mb-1 flex items-center justify-center border-2",
-                      "transition-all duration-400",
-                      isPartOfMatchingGroup && "ring-2 ring-white scale-105 z-10",
-                      isLost && "opacity-80"
+                      'w-12 h-12 rounded mb-1 flex items-center justify-center border-2',
+                      'transition-all duration-400',
+                      isPartOfMatchingGroup &&
+                        'ring-2 ring-white scale-105 z-10',
+                      isLost && 'opacity-80',
                     )}
                     style={{
                       ...getCatBoxStyle(box.cat),
-                      ...(isAnimating ? getAnimatingBoxStyle(box.id) : {})
+                      ...(isAnimating ? getAnimatingBoxStyle(box.id) : {}),
                     }}
                   >
                     {/* Cat image */}
@@ -742,7 +856,9 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
             variant="outline"
             size="sm"
             onClick={undoMove}
-            disabled={moves.length === 0 || (isComplete && !isLost) || isAnimating}
+            disabled={
+              moves.length === 0 || (isComplete && !isLost) || isAnimating
+            }
             className="flex items-center gap-1"
           >
             <Undo className="h-3 w-3" />
@@ -767,7 +883,10 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
 
         {isComplete && (
           <div className="text-center mt-4 animate-fade-in">
-            <Badge variant="outline" className="bg-green-100 text-green-800 border-green-400 px-3 py-1 text-sm">
+            <Badge
+              variant="outline"
+              className="bg-green-100 text-green-800 border-green-400 px-3 py-1 text-sm"
+            >
               🎉 Puzzle Solved in {moveCount} moves!
             </Badge>
           </div>
@@ -775,7 +894,10 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
 
         {isLost && (
           <div className="text-center mt-4 animate-fade-in">
-            <Badge variant="outline" className="bg-red-100 text-red-800 border-red-400 px-3 py-1 text-sm">
+            <Badge
+              variant="outline"
+              className="bg-red-100 text-red-800 border-red-400 px-3 py-1 text-sm"
+            >
               😕 No more moves available! Try again.
             </Badge>
           </div>
@@ -790,14 +912,16 @@ export function CatSort({ onComplete, className, initialDifficulty = 'medium' }:
       </div>
 
       {/* Add CSS animations using dangerouslySetInnerHTML instead of style jsx */}
-      <style dangerouslySetInnerHTML={{
-        __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
           @keyframes moveBox {
             0% { transform: translateX(0) translateY(0); }
             100% { transform: translateX(var(--tx)) translateY(var(--ty)); }
           }
-        `
-      }} />
+        `,
+        }}
+      />
     </div>
   );
-} 
+}

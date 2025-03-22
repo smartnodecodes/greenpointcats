@@ -1,0 +1,15 @@
+# Ignore artifacts:
+.next
+build
+dist
+node_modules
+coverage
+public
+out
+
+# Ignore all markdown files:
+*.md
+
+# Ignore all JSON files:
+package-lock.json
+package.json 
